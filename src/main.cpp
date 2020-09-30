@@ -1,7 +1,3 @@
-// -*- mode:C++; tab-width:4; c-basic-offset:4; indent-tabs-mode:nil -*-
-//
-// Author: Ugo Pattacini - <ugo.pattacini@iit.it>
-
 #include <string>
 #include <mutex>
 
@@ -73,6 +69,7 @@ protected:
     }
 
     /***************************************************/
+    // get the 3-D point in the space from given two pics
     Vector retrieveTarget3D(const Vector &cogL, const Vector &cogR)
     {
         Vector x;
@@ -81,11 +78,11 @@ protected:
     }
 
     /***************************************************/
+    // look at the ball 
     void fixate(const Vector &x)
     {
-        igaze->lookAtFixationPointSync(x);
-        igaze->waitMotionDone();
-        igaze->setTrackingMode(true);
+        igaze->lookAtFixationPointSync(x); // move the gaze to the fixation Point
+        igaze->waitMotionDone();            
     }
 
     /***************************************************/
@@ -102,25 +99,16 @@ protected:
     /***************************************************/
     void approachTargetWithHand(const Vector &x, const Vector &o)
     {
-        // enable torso dofs
-        Vector dof(10,1.0);
-        iarm->setDOF(dof,dof);
-
         Vector approach_x=x;
-        approach_x[1]+=0.1;
-        iarm->goToPoseSync(approach_x,o);
+        iarm->goToPoseSync(approach_x,o,0.5);
         iarm->waitMotionDone();
     }
 
     /***************************************************/
     void roll(const Vector &x, const Vector &o)
     {
-        // go quicker
-        iarm->setTrajTime(0.3);
-
         Vector target_x=x;
-        target_x[1]-=0.1;
-        iarm->goToPoseSync(target_x,o);
+        iarm->goToPoseSync(target_x,o,0.5); // move the end-effector to the target
         iarm->waitMotionDone();
     }
 
@@ -136,8 +124,8 @@ protected:
             igaze->blockEyes(5.0);
             
         Vector ang(3,0.0);
-        ang[1]=-40.0;
-        igaze->lookAtAbsAnglesSync(ang);
+        ang[1]=-30.0;                   // set azimuth angle at -30 deg
+        igaze->lookAtAbsAnglesSync(ang); // move the gaze at the ang (deg)
         igaze->waitMotionDone();
     }
 
@@ -145,47 +133,32 @@ protected:
     bool make_it_roll(const Vector &cogL, const Vector &cogR)
     {
         Vector x;
+        // detect blue ball 
         if (simulation)
         {
             yInfo()<<"detected cogs = ("<<cogL.toString(0,0)<<") ("<<cogR.toString(0,0)<<")";
+            // get position 
             x=retrieveTarget3D(cogL,cogR);
         }
         else if (!object.getLocation(x))
             return false;
-
+        
         yInfo()<<"retrieved 3D point = ("<<x.toString(3,3)<<")";
 
+        // look at the ball 
         fixate(x);
         yInfo()<<"fixating at ("<<x.toString(3,3)<<")";
 
         Vector o=computeHandOrientation();
         yInfo()<<"computed orientation = ("<<o.toString(3,3)<<")";
-
+        // approach the ball 
         approachTargetWithHand(x,o);
         yInfo()<<"approached";
-
+        // roll the ball 
         roll(x,o);
         yInfo()<<"roll!";
 
         return true;
-    }
-
-    /***************************************************/
-    void home()
-    {
-        Vector ang(3,0.0);
-        igaze->setTrackingMode(true);
-        igaze->lookAtAbsAnglesSync(ang);
-
-        Vector x(3);
-        x[0]=-0.2;
-        x[1]=0.35;
-        x[2]=0.1;
-        iarm->setTrajTime(0.75);
-        iarm->goToPositionSync(x);
-
-        iarm->waitMotionDone();
-        igaze->waitMotionDone();
     }
 
 public:
@@ -324,13 +297,6 @@ public:
                 reply.addString("nack");
                 reply.addString("I don't see any object!");
             }
-        }
-        else if (cmd=="home")
-        {
-            home();
-            // we assume the robot is not moving now
-            reply.addString("ack");
-            reply.addString("I've got the hard work done! Gone home.");
         }
         else
             // the father class already handles the "quit" command
