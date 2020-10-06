@@ -107,6 +107,10 @@ protected:
     /***************************************************/
     void roll(const Vector &x, const Vector &o)
     {
+        // enable torso dofs
+        Vector dof(10,1.0);
+        iarm->setDOF(dof,dof);
+
         Vector target_x=x;
         iarm->goToPoseSync(target_x,o,0.5); // move the end-effector to the target
         iarm->waitMotionDone();
