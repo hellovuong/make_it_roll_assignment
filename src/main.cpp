@@ -86,6 +86,7 @@ protected:
     }
 
     /***************************************************/
+    // Converts a dcm (direction cosine matrix) rotation matrix R to axis/angle representation
     Vector computeHandOrientation()
     {
         Matrix R(3,3);
@@ -110,7 +111,7 @@ protected:
         // enable torso dofs
         Vector dof(10,1.0);
         iarm->setDOF(dof,dof);
-
+        
         Vector target_x=x;
         iarm->goToPoseSync(target_x,o,0.5); // move the end-effector to the target
         iarm->waitMotionDone();
@@ -128,7 +129,7 @@ protected:
             igaze->blockEyes(5.0);
             
         Vector ang(3,0.0);
-        ang[1]=-30.0;                   // set azimuth angle at -30 deg
+        ang[1]=-40.0;                   // set elevation angle at -30 deg
         igaze->lookAtAbsAnglesSync(ang); // move the gaze at the ang (deg)
         igaze->waitMotionDone();
     }
